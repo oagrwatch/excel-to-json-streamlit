@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import json
 import time
 
 st.set_page_config(page_title="Excel/ODS σε JSON", layout="wide")
@@ -17,7 +18,6 @@ if uploaded_file is not None:
         progress_text = "⏳ Γίνεται επεξεργασία του αρχείου..."
         my_bar = st.progress(0, text=progress_text)
 
-        # Βήμα 1: Ανάγνωση αρχείου
         time.sleep(0.5)
         my_bar.progress(30, text="📖 Διαβάζω το αρχείο...")
 
@@ -26,20 +26,31 @@ if uploaded_file is not None:
         else:  # .ods
             df = pd.read_excel(uploaded_file, engine="odf")
 
-        # Βήμα 2: Εμφάνιση δεδομένων
         time.sleep(0.5)
         my_bar.progress(60, text="📊 Δημιουργία προεπισκόπησης...")
 
         st.subheader("📊 Προεπισκόπηση δεδομένων")
         st.dataframe(df)
 
-        # Βήμα 3: Μετατροπή σε JSON
         time.sleep(0.5)
         my_bar.progress(90, text="📝 Μετατροπή σε JSON...")
 
-        json_data = df.to_json(orient="records", force_ascii=False, indent=2)
+        # --- Custom JSON ---
+        records = df.fillna("null").to_dict(orient="records")
 
-        # Βήμα 4: Έτοιμο
+        # Όλα τα values γίνονται string εκτός από αριθμούς
+        fixed_records = []
+        for rec in records:
+            new_rec = {}
+            for k, v in rec.items():
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    new_rec[k] = v
+                else:
+                    new_rec[k] = str(v)
+            fixed_records.append(new_rec)
+
+        json_data = json.dumps(fixed_records, ensure_ascii=False, indent=2)
+
         my_bar.progress(100, text="✅ Ολοκληρώθηκε!")
 
         # Δυνατότητα λήψης JSON αρχείου
