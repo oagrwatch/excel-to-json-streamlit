@@ -12,6 +12,17 @@ uploaded_file = st.file_uploader(
     type=["xlsx", "ods"]
 )
 
+def convert_time_to_iso8601(time_str):
+    """Μετατρέπει ώρα από μορφή HH:mm:ss σε ISO 8601 duration (PTnHnMnS)."""
+    if pd.isna(time_str) or time_str == "null" or time_str == "":
+        return "PT0H0M0S"  # Επιστροφή προεπιλεγμένης τιμής για κενές ή μη έγκυρες τιμές
+    try:
+        # Υποθέτουμε ότι η ώρα είναι σε μορφή HH:mm:ss
+        hours, minutes, seconds = map(int, time_str.split(":"))
+        return f"PT{hours}H{minutes}M{seconds}S"
+    except (ValueError, AttributeError):
+        return "PT0H0M0S"  # Επιστροφή προεπιλεγμένης τιμής σε περίπτωση σφάλματος
+
 if uploaded_file is not None:
     try:
         # Progress bar
@@ -28,6 +39,10 @@ if uploaded_file is not None:
 
         time.sleep(0.5)
         my_bar.progress(60, text="📊 Δημιουργία προεπισκόπησης...")
+
+        # Μετατροπή της στήλης 'time' σε μορφή ISO 8601
+        if 'time' in df.columns:
+            df['time'] = df['time'].apply(convert_time_to_iso8601)
 
         st.subheader("📊 Προεπισκόπηση δεδομένων")
         st.dataframe(df)
@@ -63,4 +78,3 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"⚠️ Σφάλμα κατά την επεξεργασία: {e}")
-
