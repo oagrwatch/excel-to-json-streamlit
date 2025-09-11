@@ -13,34 +13,52 @@ uploaded_file = st.file_uploader(
     type=["xlsx", "ods"]
 )
 
-def convert_date_to_iso8601(date_str):
-    """Μετατρέπει ημερομηνία από DD/MM/YYYY σε YYYY-MM-DD."""
-    if pd.isna(date_str) or date_str == "null" or date_str == "":
-        return "1970-01-01"  # Προεπιλεγμένη τιμή για κενές/μη έγκυρες ημερομηνίες
+def convert_date_to_iso8601(date_value):
+    """Μετατρέπει ημερομηνία από DD/MM/YYYY ή datetime object σε YYYY-MM-DD."""
+    if pd.isna(date_value) or date_value == "null" or date_value == "":
+        return "1970-01-01"
     try:
-        date_obj = datetime.strptime(str(date_str), "%d/%m/%Y")
+        # Αν είναι datetime object
+        if isinstance(date_value, pd.Timestamp) or isinstance(date_value, datetime):
+            return date_value.strftime("%Y-%m-%d")
+        # Αν είναι string
+        date_str = str(date_value).strip()
+        date_obj = datetime.strptime(date_str, "%d/%m/%Y")
         return date_obj.strftime("%Y-%m-%d")
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError) as e:
+        st.warning(f"Σφάλμα μετατροπής ημερομηνίας: {date_value} - {e}")
         return "1970-01-01"
 
-def convert_time_to_iso8601(time_str):
-    """Μετατρέπει ώρα από HH:mm:ss σε PTnHnMnS."""
-    if pd.isna(time_str) or time_str == "null" or time_str == "":
+def convert_time_to_iso8601(time_value):
+    """Μετατρέπει ώρα από HH:mm:ss ή datetime object σε PTnHnMnS."""
+    if pd.isna(time_value) or time_value == "null" or time_value == "":
         return "PT0H0M0S"
     try:
-        hours, minutes, seconds = map(int, str(time_str).split(":"))
+        # Αν είναι datetime object
+        if isinstance(time_value, pd.Timestamp) or isinstance(time_value, datetime):
+            return f"PT{time_value.hour}H{time_value.minute}M{time_value.second}S"
+        # Αν είναι string
+        time_str = str(time_value).strip()
+        hours, minutes, seconds = map(int, time_str.split(":"))
         return f"PT{hours}H{minutes}M{seconds}S"
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError) as e:
+        st.warning(f"Σφάλμα μετατροπής ώρας: {time_value} - {e}")
         return "PT0H0M0S"
 
-def convert_timestamp_to_iso8601(timestamp_str):
-    """Μετατρέπει timestamp από DD/MM/YYYY HH:mm:ss σε YYYY-MM-DDThh:mm:ss."""
-    if pd.isna(timestamp_str) or timestamp_str == "null" or timestamp_str == "":
+def convert_timestamp_to_iso8601(timestamp_value):
+    """Μετατρέπει timestamp από DD/MM/YYYY HH:mm:ss ή datetime object σε YYYY-MM-DDThh:mm:ss."""
+    if pd.isna(timestamp_value) or timestamp_value == "null" or timestamp_value == "":
         return "1970-01-01T00:00:00"
     try:
-        timestamp_obj = datetime.strptime(str(timestamp_str), "%d/%m/%Y %H:%M:%S")
+        # Αν είναι datetime object
+        if isinstance(timestamp_value, pd.Timestamp) or isinstance(timestamp_value, datetime):
+            return timestamp_value.strftime("%Y-%m-%dT%H:%M:%S")
+        # Αν είναι string
+        timestamp_str = str(timestamp_value).strip()
+        timestamp_obj = datetime.strptime(timestamp_str, "%d/%m/%Y %H:%M:%S")
         return timestamp_obj.strftime("%Y-%m-%dT%H:%M:%S")
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError) as e:
+        st.warning(f"Σφάλμα μετατροπής timestamp: {timestamp_value} - {e}")
         return "1970-01-01T00:00:00"
 
 if uploaded_file is not None:
